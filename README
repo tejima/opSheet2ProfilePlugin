@@ -1,0 +1,15 @@
+◆opSheet2ProfilePlugin概要
+Googleスプレッドシートの情報を親データとして、OpenPNEのプロフィール属性値にマッピングするプラグイン。
+
+
+◆インストール
+/plugins/に設置
+CRONTABに同期タイミングを記述
+
+◆設定
+管理画面でSpreadSheetのアカウントや、SheetIDなどを指定する
+
+
+◆TODO
+isuueで管理する。
+
