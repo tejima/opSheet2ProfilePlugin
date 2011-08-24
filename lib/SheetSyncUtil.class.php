@@ -1,9 +1,39 @@
 <?php
 class SheetSyncUtil
 {
+  public static function createMember($num = 1){
+    for($i=0;$i<$num;$i++){
+      $m = new Member();
+      $m->name = "";
+      $m->is_active = 1;
+      $m->invite_member_id = 1;
+      $m->save();
+      echo "Member create()\n";
+    } 
+  }
+  public static function csv2member_list(){
+    $csv = Doctrine::getTable("SnsConfig")->get("zuniv_us_sheet2profile_csv");
+    $_arr = explode("\n",$csv);
+    $line_header = str_getcsv(array_shift($_arr)); //FIXME fetch other lines.
+    $line_list = $_arr; //FIXME fetch other lines.
+    $result = array();
+    $profile = array();
+    foreach($line_list as $line){//FIXME マッピングの方法を洗練させる
+      $line = str_getcsv($line);
+      for($i=3;$i<sizeof($line_header);$i++){
+        $profile[$line_header[$i]] = $line[$i];
+      }      
+      $result["member_id"] = $line[0];
+      $result["name"] = $line[1];
+      $result["pc_address"] = $line[2];
+      $result["profile"]  = $profile;
+      $result_list[] = $result;
+    }
+    print_r($result_list);
+    return $result_list;
+  }
   public static function member2sheet($virtical = true,$sheetid = 1){
     $spreadsheetService = self::getZend_Gdata_Spreadsheets();
-
     $obj = Doctrine::getTable('Member')->createQuery('m')->orderBy('m.id DESC')->limit(1)->execute();
     $member_id_max = (int)$obj[0]->id;
     $member_list = Doctrine::getTable('Member')->findAll();
@@ -258,7 +288,9 @@ class SheetSyncUtil
           
           $member_profile = Doctrine_Query::create()->from("MemberProfile mp")->where("mp.member_id = ?",$member["member_id"])->addWhere("mp.profile_id = ?",$profile->id)->fetchOne();
           //clear it
-          $member_profile->delete();
+          if($member_profile){
+            $member_profile->delete();
+          }
           
           $mp = new MemberProfile();
           $mp->member_id = $member["member_id"];

@@ -9,13 +9,19 @@
  */
 class opSheet2ProfilePluginActions extends sfActions
 {
- /**
-  * Executes index action
-  *
-  * @param sfWebRequest $request A request object
-  */
   public function executeIndex(sfWebRequest $request)
   {
-    $this->forward('default', 'module');
+    $this->form = new opSheet2ProfilePluginConfigForm();
+    if ($request->isMethod(sfWebRequest::POST))
+    {
+      $this->form->bind($request->getParameter('s2p'));
+      if ($this->form->isValid())
+      {
+        $this->form->save();
+        $this->redirect('opSheet2ProfilePlugin/index');
+      }
+    }
   }
 }
+
+
