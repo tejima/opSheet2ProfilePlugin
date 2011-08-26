@@ -10,12 +10,13 @@ class CSV2ProfileTask extends sfBaseTask
     $this->name             = 'Csv2Profile';
     $this->aliases          = array('zu-c2p');
     $this->briefDescription = '';
-
   }
   protected function execute($arguments = array(), $options = array())
   {
     $databaseManager = new sfDatabaseManager($this->configuration);
-    $list = SheetSyncUtil::csv2member_list();
-    SheetSyncUtil::member_list2profile($list);
+    $member_list = SheetSyncUtil::csv2member_list();
+    foreach($member_list as $member){
+      SheetSyncUtil::member2profile($member);
+    }
   }
 }

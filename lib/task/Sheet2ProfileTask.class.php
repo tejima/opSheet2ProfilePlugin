@@ -15,8 +15,9 @@ class Sheet2ProfileTask extends sfBaseTask
   protected function execute($arguments = array(), $options = array())
   {
     $databaseManager = new sfDatabaseManager($this->configuration);
-    $list = SheetSyncUtil::sheet2member_list();
-    SheetSyncUtil::member_list2profile($list);
-    //self::processRSS();
+    $member_list = SheetSyncUtil::sheet2member_list();
+    foreach($member_list as $member){
+      SheetSyncUtil::member2profile($member);
+    }
   }
 }

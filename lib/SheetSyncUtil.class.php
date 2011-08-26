@@ -3,6 +3,7 @@ class SheetSyncUtil
 {
   public static function createMember($num = 1){
     for($i=0;$i<$num;$i++){
+      //FIXME ちゃんとしたメンバーデータを作成する
       $m = new Member();
       $m->name = "";
       $m->is_active = 1;
@@ -10,27 +11,6 @@ class SheetSyncUtil
       $m->save();
       echo "Member create()\n";
     } 
-  }
-  public static function csv2member_list(){
-    $csv = Doctrine::getTable("SnsConfig")->get("zuniv_us_sheet2profile_csv");
-    $_arr = explode("\n",$csv);
-    $line_header = str_getcsv(array_shift($_arr)); //FIXME fetch other lines.
-    $line_list = $_arr; //FIXME fetch other lines.
-    $result = array();
-    $profile = array();
-    foreach($line_list as $line){//FIXME マッピングの方法を洗練させる
-      $line = str_getcsv($line);
-      for($i=3;$i<sizeof($line_header);$i++){
-        $profile[$line_header[$i]] = $line[$i];
-      }      
-      $result["member_id"] = $line[0];
-      $result["name"] = $line[1];
-      $result["pc_address"] = $line[2];
-      $result["profile"]  = $profile;
-      $result_list[] = $result;
-    }
-    print_r($result_list);
-    return $result_list;
   }
   public static function member2sheet($virtical = true,$sheetid = 1){
     $spreadsheetService = self::getZend_Gdata_Spreadsheets();
@@ -187,41 +167,33 @@ class SheetSyncUtil
       }
     }
   }
-  public static function writeindex(){
-    $spreadsheetService = self::getZend_Gdata_Spreadsheets();
-    echo "writeindex START\n";
-    $update = $spreadsheetService->updateCell(
-                   1,
-                   2,
-                   "community_id",
-                   opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                   opConfig::get('opsheetsyncplugin_gapps_sheetid',null)
-                   );
-    $update = $spreadsheetService->updateCell(
-                   2,
-                   1,
-                   "member_id",
-                   opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                   opConfig::get('opsheetsyncplugin_gapps_sheetid',null)
-                   );
-
-   }
-  public static function write_slash(){
-    $spreadsheetService = self::getZend_Gdata_Spreadsheets();
-    echo "write_slash START\n";
-
-    $obj = Doctrine::getTable('Member')->createQuery('m')->orderBy('m.id DESC')->limit(1)->execute();
-    $member_id_max = (int)$obj[0]->id;
-    $member_list = Doctrine::getTable('Member')->findAll();
-    for($i=1;$i<=$member_id_max;$i++){
-      $update = $spreadsheetService->updateCell(
-                   $i+2,
-                   $i+2,
-                   '↙',
-                   opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                   2
-                   );
+  public static function csv2member_list(){
+    $csv = Doctrine::getTable("SnsConfig")->get("zuniv_us_sheet2profile_csv");
+    $_arr = explode("\n",$csv);
+    $line_header = str_getcsv(array_shift($_arr)); 
+    $line_list = $_arr; 
+    $result = array();
+    $profile = array();
+    foreach($line_list as $line){
+      $line = str_getcsv($line);
+      $assoc_line = array_combine($line_header,$line);
+      //print_r($assoc_line);
+      foreach($assoc_line as $key => $value){
+        switch($key){
+          case "member_id":
+          case "name":
+          case "pc_address":
+            $result[$key] = $value;
+            break;
+          default:
+            $profile[$key] = $value;
+        }
+      }
+      $result["profile"] = $profile;
+      $result_list[] = $result;
     }
+    print_r($result_list);
+    return $result_list;
   }
   public static function sheet2member_list(){
     $id = Doctrine::getTable("SnsConfig")->get("zuniv_us_googleid");
@@ -242,14 +214,14 @@ class SheetSyncUtil
         $value = $line->getText();
         echo $key. " = " . $value;
         echo "\n";
-        if($key == "member_id"){
-          $result[$key] = $value;
-        }else if($key == "name"){
-          $result[$key] = $value;
-        }else if($key == "pc_address"){
-          $result[$key] = $value;
-        }else{
-          $profile[$key] = $value;
+        switch($key){
+          case "member_id":
+          case "name":
+          case "pc_address":
+            $result[$key] = $value;
+            break;
+          default:
+            $profile[$key] = $value;
         }
       }
       $result["profile"] = $profile;
@@ -259,47 +231,64 @@ class SheetSyncUtil
 
     return $result_list;
   }
-  public static function member_list2profile($member_list = null){
-    foreach($member_list as $member){
-      $obj = Doctrine::getTable("Member")->find($member["member_id"]);
-      $obj->name = $member["name"];
-      $obj->setConfig("pc_address",$member["pc_address"]);
+  public static function member2profile($member = null){
+    if(!$member["member_id"]){ //create member 
+      $obj = new Member();
+      $obj->is_active = 1;
+      $obj->invite_member_id = 1;
       $obj->save();
-      foreach($member["profile"] as $key => $value){
-        $profile = Doctrine_Query::create()->from("Profile p")->where("p.name = ?",$key)->fetchOne();
-        //$profile = Doctrine_Query::create()->from("Profile p")->fetchArray();
-        //print_r($profile);
-        if(!@$profile){
-          continue;
-        }else{
-          echo $profile->name . "=" . $profile->id;
-          echo "\n";
-          echo $key . "=>" . $value;
-          echo "\n";
-
-          $res_list = Doctrine_Query::create()->from("ProfileOption po,po.Translation t")->where("po.profile_id = ?",$profile->id)->andWhere("t.value = ?",$value)->fetchArray();
-          $res = $res_list[0];
-          echo "res=";
-          print_r($res);
-
-          echo "member_id = " . $member["member_id"] . "\n";
-          echo "profile_id = " . $profile->id . "\n";
-          echo "po_id = " . $res["id"] . "\n";
-          
-          $member_profile = Doctrine_Query::create()->from("MemberProfile mp")->where("mp.member_id = ?",$member["member_id"])->addWhere("mp.profile_id = ?",$profile->id)->fetchOne();
-          //clear it
-          if($member_profile){
-            $member_profile->delete();
-          }
-          
-          $mp = new MemberProfile();
-          $mp->member_id = $member["member_id"];
-          $mp->profile_id = $profile->id;
-          $mp->profile_option_id = $res["id"];
-          $mp->save();
-          
-        }
+      $member["member_id"] = $obj->id;
+      echo "NEW MEMBER CREATED!!!\n";
+    }else{ //update member
+      $obj = Doctrine::getTable("Member")->find($member["member_id"]);
+      if(!$obj){ //invalid member_id. skip updating profiles.
+        return; //avoid member update.
       }
+    }
+    $obj->name = $member["name"];
+    $obj->setConfig("pc_address",$member["pc_address"]);
+    $obj->save();
+
+    //FIXME enable text type profile update.
+    foreach($member["profile"] as $key => $value){
+      $profile = Doctrine_Query::create()->from("Profile p")->where("p.name = ?",$key)->fetchOne();
+      if(!$profile){ //プロフィール名がなければスキップ
+        echo "NO PROFILE MATCHED. HEADER TEXT YOU PUT IS MAYBE INCORRECT. \n";
+        continue; //goto next loop
+      }
+      $mp = Doctrine_Query::create()->from("MemberProfile mp")->where("mp.member_id = ?",$member["member_id"])->addWhere("mp.profile_id = ?",$profile->id)->fetchOne();
+      /////////////////////////////////////////////////////////
+      //タイプ判定 テキスト入力型ならそのままmember_profileをアップデートする。
+      if($profile["form_type"] == "textarea"){ //text value profile. not option.
+        echo "FORM_TYPE == TEXTAREA.\n";
+        if(!$mp){ //create
+          $mp = new MemberProfile();
+        }
+        $mp->member_id = $member["member_id"];
+        $mp->profile_id = $profile->id;
+        $mp->value = $value;
+        $mp->save();
+        continue; //goto next loop
+      }
+      echo "FORM_TYPE == SELECT.\n";
+      /////////////////////////////////////////////////////////
+      //FIXME 複数選択肢の場合の入力方法に対応。現在は単一選択のみ対応。 
+      echo $profile->name . "=" . $profile->id;
+      echo "\n";
+      echo $key . "=>" . $value;
+      echo "\n";
+
+      $po = Doctrine_Query::create()->from("ProfileOption po,po.Translation t")->where("po.profile_id = ?",$profile->id)->andWhere("t.value = ?",$value)->fetchOne();
+      echo "member_id = " . $member["member_id"] . "\n";
+      echo "profile_id = " . $profile->id . "\n";
+      echo "po_id = " . $po->id . "\n";
+      if(!$mp){ //create it.
+        $mp = new MemberProfile();
+      }
+      $mp->member_id = $member["member_id"];
+      $mp->profile_id = $profile->id;
+      $mp->profile_option_id = $po->id;
+      $mp->save();
     }
   }
   public static function sheet2friend(){
