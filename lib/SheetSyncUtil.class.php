@@ -183,6 +183,7 @@ class SheetSyncUtil
           case "member_id":
           case "name":
           case "pc_address":
+          case "password":
             $result[$key] = $value;
             break;
           default:
@@ -218,6 +219,7 @@ class SheetSyncUtil
           case "member_id":
           case "name":
           case "pc_address":
+          case "password":
             $result[$key] = $value;
             break;
           default:
@@ -245,8 +247,9 @@ class SheetSyncUtil
         return; //avoid member update.
       }
     }
-    $obj->name = $member["name"];
-    $obj->setConfig("pc_address",$member["pc_address"]);
+    if($member["name"]){$obj->name = $member["name"];}
+    if($member["pc_address"]){$obj->setConfig("pc_address",$member["pc_address"]);}
+    if($member["password"]){$obj->setConfig("password",md5($member["password"]));}
     $obj->save();
 
     //FIXME enable text type profile update.
