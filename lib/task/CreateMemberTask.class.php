@@ -16,7 +16,5 @@ class CreateMemberTask extends sfBaseTask
   {
     $databaseManager = new sfDatabaseManager($this->configuration);
     $list = SheetSyncUtil::createMember(100);
-    //SheetSyncUtil::member_list2profile($list);
-    //self::processRSS();
   }
 }
