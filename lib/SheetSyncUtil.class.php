@@ -252,7 +252,6 @@ class SheetSyncUtil
     if($member["password"]){$obj->setConfig("password",md5($member["password"]));}
     $obj->save();
 
-    //FIXME enable text type profile update.
     foreach($member["profile"] as $key => $value){
       $profile = Doctrine_Query::create()->from("Profile p")->where("p.name = ?",$key)->fetchOne();
       if(!$profile){ //プロフィール名がなければスキップ
@@ -262,8 +261,8 @@ class SheetSyncUtil
       $mp = Doctrine_Query::create()->from("MemberProfile mp")->where("mp.member_id = ?",$member["member_id"])->addWhere("mp.profile_id = ?",$profile->id)->fetchOne();
       /////////////////////////////////////////////////////////
       //タイプ判定 テキスト入力型ならそのままmember_profileをアップデートする。
-      if($profile["form_type"] == "textarea"){ //text value profile. not option.
-        echo "FORM_TYPE == TEXTAREA.\n";
+      if($profile["form_type"] == "textarea" || $profile["form_type"] == "input"){ //text value profile. not option.
+        echo "FORM_TYPE == INPUT OR TEXTAREA.\n";
         if(!$mp){ //create
           $mp = new MemberProfile();
         }
