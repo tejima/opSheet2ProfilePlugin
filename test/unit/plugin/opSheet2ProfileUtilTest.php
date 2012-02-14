@@ -42,6 +42,13 @@ $member = Doctrine::getTable("Member")->find(2);
 $t->is($member->name,"Jitou Tennou","Member.nameは");
 
 //$conn->rollback(); //TEARDOWN
+$t->fail("travis fail test");
 
 
-
+$result = $t->to_array();
+if(sizeof($result[0]["stats"]["failed"]) !=0)
+{
+  exit(1);
+}else{
+  exit(0);
+}
