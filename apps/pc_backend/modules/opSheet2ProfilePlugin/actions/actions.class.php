@@ -22,6 +22,16 @@ class opSheet2ProfilePluginActions extends sfActions
       }
     }
   }
+  public function executeSheet(sfWebRequest $request)
+  {
+    
+    $this->redirect('opSheet2ProfilePlugin/index');
+  }
+  public function executeCSV(sfWebRequest $request)
+  {
+
+    $this->redirect('opSheet2ProfilePlugin/index');
+  }
 }
 
 

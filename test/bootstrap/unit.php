@@ -2,6 +2,7 @@
 
 $_test_dir = realpath(dirname(__FILE__).'/..');
 
+
 // chdir to the symfony(OpenPNE) project directory
 chdir(dirname(__FILE__).'/../../../..');
 

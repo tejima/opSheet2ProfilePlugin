@@ -9,94 +9,8 @@ class SheetSyncUtil
       $m->is_active = 1;
       $m->invite_member_id = 1;
       $m->save();
-      echo "Member create()\n";
+      echo "Member created.\n";
     } 
-  }
-  public static function member2sheet($virtical = true,$sheetid = 1){
-    $spreadsheetService = self::getZend_Gdata_Spreadsheets();
-    $obj = Doctrine::getTable('Member')->createQuery('m')->orderBy('m.id DESC')->limit(1)->execute();
-    $member_id_max = (int)$obj[0]->id;
-    $member_list = Doctrine::getTable('Member')->findAll();
-    if($virtical){
-      for($i=1;$i<=$member_id_max;$i++){
-        $update = $spreadsheetService->updateCell(
-                     $i+2,
-                     1,
-                     $i,
-                     opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                     $sheetid
-                     );
-      }
-      foreach($member_list as $member){
-        $update = $spreadsheetService->updateCell($member->id+2,
-                     2,
-                     "{$member->name}",
-                     opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                     $sheetid
-                     );
-      }
-    }else{
-      for($i=1;$i<=$member_id_max;$i++){
-        $update = $spreadsheetService->updateCell(
-                     1,
-                     $i+2,
-                     $i,
-                     opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                     $sheetid
-                     );
-      }
-      foreach($member_list as $member){
-        $update = $spreadsheetService->updateCell(
-                     2,
-                     $member->id+2,
-                     "{$member->name}",
-                     opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                     $sheetid
-                     );
-      }
-    }
-    return true;
-  }
-  public static function community2sheet(){
-    $spreadsheetService = self::getZend_Gdata_Spreadsheets();
-
-    $obj = Doctrine::getTable('Community')->createQuery('c')->orderBy('c.id DESC')->limit(1)->execute();
-    $community_id_max = (int)$obj[0]->id;
-    for($i=1;$i<=$community_id_max;$i++){
-      $update = $spreadsheetService->updateCell(
-                   1,
-                   $i+2,
-                   $i,
-                   opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                   opConfig::get('opsheetsyncplugin_gapps_sheetid',null)
-                   );
-    }
-    $community_list = Doctrine::getTable('Community')->findAll();
-    foreach($community_list as $community){
-      $update = $spreadsheetService->updateCell(2,
-                   $community->id+2,
-                   "{$community->name}",
-                   opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                   opConfig::get('opsheetsyncplugin_gapps_sheetid',null));
-      $i++;
-    }
-    return true;
-  }
-  public static function community_member2sheet(){
-    $spreadsheetService = self::getZend_Gdata_Spreadsheets();
-    $community_list = Doctrine::getTable('Community')->findAll();
-    foreach($community_list as $community){
-      $cm_list = Doctrine::getTable('CommunityMember')->findByCommunityId($community->id);
-      foreach($cm_list as $cm){
-        $update = $spreadsheetService->updateCell(
-                     $cm->member_id+2,
-                     $cm->community_id+2,
-                     'T',
-                     opConfig::get('opsheetsyncplugin_gapps_sheetkey',null),
-                     opConfig::get('opsheetsyncplugin_gapps_sheetid',null)
-                     );
-      }
-    }
   }
   private static function getZend_Gdata_Spreadsheets($_id = null,$_pass = null){
     $id = Doctrine::getTable('SnsConfig')->get('opsheetsyncplugin_gapps_id',$_id);
@@ -176,24 +90,14 @@ class SheetSyncUtil
     $profile = array();
     foreach($line_list as $line){
       $line = str_getcsv($line);
-      $assoc_line = array_combine($line_header,$line);
-      //print_r($assoc_line);
-      foreach($assoc_line as $key => $value){
-        switch($key){
-          case "member_id":
-          case "name":
-          case "pc_address":
-          case "password":
-            $result[$key] = $value;
-            break;
-          default:
-            $profile[$key] = $value;
+      if(preg_match("/^[0-9]+/",$line[0])){
+        for($i=0;$i<sizeof($line_header);$i++){
+          list($model,$col) = explode(".",$line_header[$i]);
+          $result[$model][$col] = $line[$i];
         }
+        $result_list[] = $result;
       }
-      $result["profile"] = $profile;
-      $result_list[] = $result;
     }
-    print_r($result_list);
     return $result_list;
   }
   public static function sheet2member_list(){
@@ -233,64 +137,51 @@ class SheetSyncUtil
 
     return $result_list;
   }
-  public static function member2profile($member = null){
-    if(!$member["member_id"]){ //create member 
+  public static function member2profile($m = null){
+    if(!$m["Member"]["id"]){ //create member 
       $obj = new Member();
       $obj->is_active = 1;
       $obj->invite_member_id = 1;
       $obj->save();
-      $member["member_id"] = $obj->id;
+      $m["Member"]["id"] = $obj->id;
       echo "NEW MEMBER CREATED!!!\n";
     }else{ //update member
-      $obj = Doctrine::getTable("Member")->find($member["member_id"]);
+      $obj = Doctrine::getTable("Member")->find($m["Member"]["id"]);
       if(!$obj){ //invalid member_id. skip updating profiles.
         return; //avoid member update.
       }
     }
-    if($member["name"]){$obj->name = $member["name"];}
-    if($member["pc_address"]){$obj->setConfig("pc_address",$member["pc_address"]);}
-    if($member["password"]){$obj->setConfig("password",md5($member["password"]));}
+    foreach($m["Member"] as $key => $value){
+      $obj->$key = $value;
+    }
     $obj->save();
+    foreach($m["MemberConfig"] as $key => $value){
+      $obj->setConfig($key,$value);
+    }
 
-    foreach($member["profile"] as $key => $value){
-      $profile = Doctrine_Query::create()->from("Profile p")->where("p.name = ?",$key)->fetchOne();
-      if(!$profile){ //プロフィール名がなければスキップ
-        echo "NO PROFILE MATCHED. HEADER TEXT YOU PUT IS MAYBE INCORRECT. \n";
-        continue; //goto next loop
-      }
-      $mp = Doctrine_Query::create()->from("MemberProfile mp")->where("mp.member_id = ?",$member["member_id"])->addWhere("mp.profile_id = ?",$profile->id)->fetchOne();
-      /////////////////////////////////////////////////////////
-      //タイプ判定 テキスト入力型ならそのままmember_profileをアップデートする。
-      if($profile["form_type"] == "textarea" || $profile["form_type"] == "input"){ //text value profile. not option.
-        echo "FORM_TYPE == INPUT OR TEXTAREA.\n";
-        if(!$mp){ //create
-          $mp = new MemberProfile();
-        }
-        $mp->member_id = $member["member_id"];
-        $mp->profile_id = $profile->id;
-        $mp->value = $value;
-        $mp->save();
-        continue; //goto next loop
-      }
-      echo "FORM_TYPE == SELECT.\n";
-      /////////////////////////////////////////////////////////
-      //FIXME 複数選択肢の場合の入力方法に対応。現在は単一選択のみ対応。 
-      echo $profile->name . "=" . $profile->id;
-      echo "\n";
-      echo $key . "=>" . $value;
-      echo "\n";
+    $member = Doctrine::getTable('Member')->find($m["Member"]["id"]);
 
-      $po = Doctrine_Query::create()->from("ProfileOption po,po.Translation t")->where("po.profile_id = ?",$profile->id)->andWhere("t.value = ?",$value)->fetchOne();
-      echo "member_id = " . $member["member_id"] . "\n";
-      echo "profile_id = " . $profile->id . "\n";
-      echo "po_id = " . $po->id . "\n";
-      if(!$mp){ //create it.
-        $mp = new MemberProfile();
-      }
-      $mp->member_id = $member["member_id"];
-      $mp->profile_id = $profile->id;
-      $mp->profile_option_id = $po->id;
-      $mp->save();
+    $profileForm = new MemberProfileForm(array(), array(), false);
+    $profileForm->setConfigWidgets();
+    $v = array();
+    $profiles = $member->getProfiles();
+    foreach ($profiles as $profile)
+    {
+      $key = $profile->getName();
+      $profileValue = $profile->getValue();
+      $v[$key]['value'] = $profileValue;
+    }
+    $values = $m["MemberProfile"];
+    unset($values['memberId']);
+    foreach ($values as $key => $value)
+    {
+      $v[$key]['value'] = $value;
+    }
+
+    $profileForm->bind($v);
+    if ($profileForm->isValid())
+    {
+      $profileForm->save($m["Member"]["id"]);
     }
   }
   public static function sheet2friend(){

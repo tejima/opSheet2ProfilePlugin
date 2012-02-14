@@ -7,7 +7,7 @@ class CSV2ProfileTask extends sfBaseTask
     mb_language("Japanese");
     mb_internal_encoding("utf-8");
     $this->namespace        = 'zuniv.us';
-    $this->name             = 'Csv2Profile';
+    $this->name             = 'CSV2Profile';
     $this->aliases          = array('zu-c2p');
     $this->briefDescription = '';
   }

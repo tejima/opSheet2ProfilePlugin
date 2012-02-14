@@ -1,0 +1,4 @@
+SnsConfig:
+  SnsConfig_1:
+    name: zuniv_us_sheet2profile_csv
+    value: "Member.id,Member.name,Member.invite_member_id,Member.is_login_rejected,Member.created_at,Member.updated_at,Member.is_active,MemberConfig.pc_address,MemberConfig.password,MemberConfig.secret_question,MemberConfig.secret_answer,MemberProfile.op_preset_self_introduction,MemberProfile.op_preset_sex,MemberProfile.op_preset_birthday,MemberProfile.op_preset_region\r\n1,Tenchi Tennou,1,0,2012/02/14 17:54:06,2012/02/14 17:54:06,1,1@example.com,5f4dcc3b5aa765d61d8327deb882cf99,5,c81c00cad27aa757b313626c3c02094f,秋の田の かりほの庵の 苫をあらみ わが衣手は 露にぬれつつ,Man,1988/04/23,Tokyo\r\n2,Jitou Tennou,1,0,2012/02/14 17:54:06,2012/02/14 17:54:06,1,\"2@example.com\r\n\",5f4dcc3b5aa765d61d8327deb882cf99,5,c81c00cad27aa757b313626c3c02094f,春すぎて 夏来にけらし 白妙の 衣ほすてふ 天の香具山,Man,1988/04/23,Tokyo"
