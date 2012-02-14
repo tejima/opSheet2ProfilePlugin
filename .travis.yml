@@ -14,4 +14,5 @@ before_script:
   - sh -c "cp config/OpenPNE.yml.sample config/OpenPNE.yml"
   - sh -c "if [ '$DB' = 'mysql' ]; then ./symfony openpne:fast-install --dbms=mysql --dbuser=root --dbpassword= --dbname=openpne; fi"
 
-script: ./symfony test:unit opSmartphoneAPI
+script: php plugins/opSheet2ProfilePlugin/test/unit/plugin/opSheet2ProfileUtilTest.php 
+
