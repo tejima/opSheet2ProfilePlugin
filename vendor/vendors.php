@@ -24,7 +24,7 @@ foreach ($deps as $dep) {
 
     system(sprintf('cd %s && git fetch -q origin && git checkout %s', escapeshellarg($installDir), escapeshellarg($rev)));
 
-    system(sprintf('mkdir %s/plugins/opSheet2ProfilePlugin ', escapeshellarg($installDir));
+    system(sprintf('mkdir %s/plugins/opSheet2ProfilePlugin ', escapeshellarg($installDir)));
 
 
     echo sprintf('cd %s && mv apps config README lib test vendor/OpenPNE/plugins/opSheet2ProfilePlugin',escapeshellarg($vendorDir . "/../" ));
