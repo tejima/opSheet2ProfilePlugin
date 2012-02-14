@@ -7,6 +7,15 @@ env:
   - DB=mysql
 
 before_script:
+  - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'create database IF NOT EXISTS openpne;' -uroot; fi"
   - php vendor/vendors.php
-  - cd vendor
-  - ls -al
+  - cd vendor/OpenPNE
+  - sh -c "cp config/ProjectConfiguration.class.php.sample config/ProjectConfiguration.class.php"
+  - sh -c "cp config/OpenPNE.yml.sample config/OpenPNE.yml"
+  - sh -c "if [ '$DB' = 'mysql' ]; then ./symfony openpne:fast-install --dbms=mysql --dbuser=root --dbpassword= --dbname=openpne; fi"
+  - sh -c "cd ~"
+  - sh -c "mkdir vendor/OpenPNE/plugins/opSheet2ProfilePlugin"
+  - sh -c "mv apps config README lib test vendor/OpenPNE/plugins/opSheet2ProfilePlugin"
+  - sh -c "./symfony cc"
+
+script: ./symfony test:unit opSmartphoneAPI

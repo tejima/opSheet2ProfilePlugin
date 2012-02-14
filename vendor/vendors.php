@@ -22,5 +22,5 @@ foreach ($deps as $dep) {
         system(sprintf('git clone -q %s %s', escapeshellarg($url), escapeshellarg($installDir)));
     }
 
-    system(sprintf('cd %s && git fetch -q origin && git reset --hard %s', escapeshellarg($installDir), escapeshellarg($rev)));
+    system(sprintf('cd %s && git fetch -q origin && git checkout %s', escapeshellarg($installDir), escapeshellarg($rev)));
 }
