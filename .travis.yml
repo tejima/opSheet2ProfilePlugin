@@ -8,5 +8,8 @@ env:
 
 before_script:
   - sh -c "cd .."
+  - sh -c "cd .."
   - sh -c "pwd"
+  - sh -c "ls -al"
+  - sh -c "cd ~"
   - sh -c "ls -al"
