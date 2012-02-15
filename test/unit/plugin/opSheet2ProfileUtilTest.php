@@ -3,7 +3,6 @@
 include(dirname(__FILE__).'/../../bootstrap/unit.php');
 include(dirname(__FILE__).'/../../bootstrap/database.php');
 
-
 //INIT
 $configuration = ProjectConfiguration::getApplicationConfiguration("pc_frontend", 'test', isset($debug) ? $debug : true);
 sfContext::createInstance($configuration);
@@ -11,19 +10,21 @@ sfContext::createInstance($configuration);
 
 $t = new lime_test(null, new lime_output_color());
 
+$conn->beginTransaction(); //SETUP
 
-//$conn->beginTransaction(); $ua = new opBrowser(); //SETUP
-
+$t->comment("csv2member_list()");
 $member_list = SheetSyncUtil::csv2member_list();
 
 $t->is(sizeof($member_list),2,'サイズは2');
 $t->is($member_list[0]["Member"]["name"],"Tenchi Tennou",'name match');
 $t->is($member_list[1]["Member"]["name"],"Jitou Tennou",'name match');
 
-//$conn->rollback(); //TEARDOWN
-//$conn->beginTransaction(); $ua = new opBrowser(); //SETUP
+$conn->rollback(); //TEARDOWN
+
+$conn->beginTransaction(); //SETUP
 
 $member_list = SheetSyncUtil::csv2member_list();
+$t->comment("csv2member_list()");
 
 foreach($member_list as $line){
   SheetSyncUtil::member2profile($line);
@@ -40,10 +41,17 @@ $t->is($member->getProfile("op_preset_region")->value,"Tokyo","op_preset_region 
 
 $member = Doctrine::getTable("Member")->find(2);
 $t->is($member->name,"Jitou Tennou","Member.nameは");
+$t->is($member->getConfig("pc_address"),"2@example.com","pc_addressは2@example.com");
+$t->is($member->getProfile("op_preset_sex")->value,"Man","op_preset_sex = Man");
 
-//$conn->rollback(); //TEARDOWN
+$conn->rollback(); //TEARDOWN
 
+$t->comment("csv2member_list()");
+$conn->beginTransaction(); //SETUP
 
+$conn->rollback(); //TEARDOWN
+
+//---------------------------------------------------------------
 $result = $t->to_array();
 if(sizeof($result[0]["stats"]["failed"]) !=0)
 {
